@@ -17,7 +17,7 @@ def wrapper_class(
         encode, decode):
 
     class Ring(Wire, Interface):
-
+        _body = f
         _ckey = ckey
         _expire_default = expire_default
 
