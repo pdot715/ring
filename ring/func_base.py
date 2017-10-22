@@ -137,6 +137,41 @@ class NotFound(Exception):
     pass
 
 
+class RingBase(object):
+
+    @classmethod
+    def for_callable(cls, f):
+        from ring.func_base import is_method, is_classmethod
+
+        _shared_attrs = {}
+        _dynamic_attrs = {}
+
+        if is_method(f):
+
+            @WiredProperty
+            def _w(self):
+                wrapper_name = '__wrapper_' + f.__name__
+                wrapper = getattr(self, wrapper_name, None)
+                if wrapper is None:
+                    _wrapper = cls((self,))
+                    wrapper = functools.wraps(f)(_wrapper)
+                    setattr(self, wrapper_name, wrapper)
+                    _wrapper._shared_attrs = _shared_attrs
+                    _wrapper._dynamic_attrs = _dynamic_attrs
+                return wrapper
+
+        elif is_classmethod(f):
+            _shared_attrs['anon_padding'] = True
+            _w = cls(())
+        else:
+            _w = cls(())
+
+        _w._shared_attrs = _shared_attrs
+        _w._dynamic_attrs = _dynamic_attrs
+
+        return _w
+
+
 class StorageImplementation(object):
 
     def get_value(self, obj, key):

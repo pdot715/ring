@@ -16,7 +16,7 @@ def wrapper_class(
         miss_value, expire_default,
         encode, decode):
 
-    class Ring(Wire, Interface):
+    class Ring(fbase.RingBase, Interface):
         _body = f
         _ckey = ckey
         _expire_default = expire_default
@@ -27,9 +27,14 @@ def wrapper_class(
         _encode = staticmethod(encode)
         _decode = staticmethod(decode)
 
+        def __init__(self, preargs):
+            super(Ring, self).__init__()
+            self.wire = Wire()
+            self.preargs = preargs
+
         @functools.wraps(f)
         def __call__(self, *args, **kwargs):
-            args = self.reargs(args, padding=False)
+            args = self.wire.reargs(args, self.preargs, padding=False)
             return self._get_or_update(args, kwargs)
 
         def __getattr__(self, name):
@@ -44,7 +49,7 @@ def wrapper_class(
                 if callable(attr):
                     @functools.wraps(f)
                     def impl_f(*args, **kwargs):
-                        args = self.reargs(args, padding=True)
+                        args = self.wire.reargs(args, self.preargs, padding=True)
                         return attr(args, kwargs)
                     setattr(self, name, impl_f)
 
