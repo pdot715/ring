@@ -12,6 +12,7 @@ class Wire(object):
     def for_callable(cls, f):
         from ring.func_base import is_method, is_classmethod
 
+        _shared_attrs = {}
         _dynamic_attrs = {}
 
         if is_method(f):
@@ -24,27 +25,29 @@ class Wire(object):
                     _wrapper = cls((self,))
                     wrapper = functools.wraps(f)(_wrapper)
                     setattr(self, wrapper_name, wrapper)
+                    _wrapper._shared_attrs = _shared_attrs
                     _wrapper._dynamic_attrs = _dynamic_attrs
                 return wrapper
 
         elif is_classmethod(f):
-            _w = cls((), anon_padding=True)
+            _shared_attrs['anon_padding'] = True
+            _w = cls(())
         else:
             _w = cls(())
 
+        _w._shared_attrs = _shared_attrs
         _w._dynamic_attrs = _dynamic_attrs
 
         return _w
 
-    def __init__(self, preargs, anon_padding=False):
+    def __init__(self, preargs):
         assert isinstance(preargs, tuple)
         self.preargs = preargs
-        self.anon_padding = anon_padding
 
     def reargs(self, args, padding):
         if self.preargs:
             args = self.preargs + args
-        elif padding and self.anon_padding:
+        elif padding and self._shared_attrs.get('anon_padding', False):
             args = (None,) + args
         return args
 
