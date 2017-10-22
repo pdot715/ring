@@ -125,27 +125,10 @@ def factory(
         ckey = create_ckey(
             f, _key_prefix, _ignorable_keys, encoding=key_encoding, key_refactor=key_refactor)
 
-        _Wrapper = wrapper_class(
+        return wrapper_class(
             f, context, ckey,
             interface, storage_implementation, miss_value, expire_default,
-            encode, decode)
-
-        if is_method(f):
-            @property
-            def _w(self):
-                wrapper_name = '__wrapper_' + f.__name__
-                wrapper = getattr(self, wrapper_name, None)
-                if wrapper is None:
-                    _wrapper = _Wrapper((self,))
-                    wrapper = functools.wraps(f)(_wrapper)
-                    setattr(self, wrapper_name, wrapper)
-                return wrapper
-        elif is_classmethod(f):
-            _w = _Wrapper((), anon_padding=True)
-        else:
-            _w = _Wrapper(())
-
-        return _w
+            encode, decode).for_callable(f)
 
     return _decorator
 
